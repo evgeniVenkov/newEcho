@@ -1,14 +1,14 @@
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
 
 # Путь для кэша модели
-project_dir = "./model_cache"
+project_dir = "./gpt2_medium"
 
 # Загрузка токенизатора и модели
 tokenizer = GPT2Tokenizer.from_pretrained("gpt2", cache_dir=project_dir)
 model = GPT2LMHeadModel.from_pretrained("gpt2", cache_dir=project_dir)
 
 # Текст на русском для проверки
-text = "Искусственный интеллект это"
+text = "Искусственный интеллект"
 input_ids = tokenizer.encode(text, return_tensors="pt")
 
 # Генерация текста
