@@ -40,7 +40,7 @@ def save_article_to_json(title: str, text: str):
     """
     new_data = {'title': title, 'text': text}
 
-    with open(f"./data/my_data.json", "r+", encoding="utf-8") as f:
+    with open(f"../data/my_data.json", "r+", encoding="utf-8") as f:
         # Прочитаем существующие данные
         try:
             f.seek(0)
@@ -56,22 +56,12 @@ def save_article_to_json(title: str, text: str):
         json.dump(existing_data, f, ensure_ascii=False, indent=4)
 
 
-# Пример использования
-# article_title = 'Компьютерная_безопасность'  # Название статьи без "Википедия:"
-# article_text = fetch_wikipedia_article(article_title)
 
-# if article_text:
-#     save_article_to_json(article_title, article_text)
-#     print("good :-D")
+article_title = 'Компьютерная_безопасность'  # Название статьи без "Википедия:"
+article_text = fetch_wikipedia_article(article_title)
 
-from datasets import load_dataset
+if article_text:
+    save_article_to_json(article_title, article_text)
+    print("good :-D")
 
-dataset = load_dataset("SiberiaSoft/SiberianPersonaChat")
-
-
-# # Сохранение текстов в текстовый файл
-with open("siberian_persona_chat.txt", "w", encoding="utf-8") as f:
-    for dialogue in dataset["train"]:
-        # Каждый диалог можно разделить на вопросы и ответы
-        f.write(f"Question: {dialogue['input']}\n")
 
