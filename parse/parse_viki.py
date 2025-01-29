@@ -1,7 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 import json
-
+import os
 
 def fetch_wikipedia_article(title: str):
     """
@@ -39,7 +39,7 @@ def save_article_to_json(title: str, text: str):
     :param text: Текст статьи.
     """
     new_data = {'title': title, 'text': text}
-
+    os.makedirs("../data", exist_ok=True)
     with open(f"../data/my_data.json", "r+", encoding="utf-8") as f:
         # Прочитаем существующие данные
         try:

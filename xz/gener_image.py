@@ -2,6 +2,9 @@ from PIL import Image, ImageDraw, ImageFont
 import os
 import random
 
+# данный код генерирует ихображения для тренировки нейросети на распозноваиние печатного текста
+# но он ещё сильно не дописан ХD
+
 # Папка для сохранения изображений
 output_dir = "./equal_sign_images"
 os.makedirs(output_dir, exist_ok=True)
@@ -18,7 +21,7 @@ if not os.path.exists(font_path):
 # Генерация изображений
 def get_text():
 
-
+    pass
 
 
 for i in range(num_images):
@@ -30,7 +33,7 @@ for i in range(num_images):
     font_size = random.randint(*font_size_range)
     font = ImageFont.truetype(font_path, font_size)
 
-    # Рисуем знак "=" в случайной позиции
+    # Рисуем знак текст в случайной позиции
     text = get_text()
     text_width, text_height = font.getbbox(text)[2:4]
 

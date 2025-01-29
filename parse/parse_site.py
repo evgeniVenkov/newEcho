@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 import json
 helper = False
 # Указываем URL сайта, откуда будем парсить данные
-URL = "https://djvu.online/file/fUiLgJ8TWC6fV"  # Замените на нужный сайт
+URL = "https://djvu.online/file/twAF2fW3dHqKg"  # Замените на нужный сайт
 
 # 1. Отправляем GET-запрос к сайту
 response = requests.get(URL)
@@ -17,14 +17,14 @@ if response.status_code == 200:
     # Предположим, что заголовки находятся в теге <h2>, а текст в <p>
     text = soup.find(id="dump-body")
     print(text)
-    with open('../data/history_book1.txt',"w",encoding = "utf-8")as f:
+    with open('../data/history_book_XIX-XX.txt',"w",encoding = "utf-8")as f:
         f.write(text.get_text())
 
 
 
     print("Данные успешно сохранены в history_textbook.json!")
 else:
-    print(f"Ошибка: не удалось получить данные. Код состояния {response.status_code}")
+        print(f"Ошибка: не удалось получить данные. Код состояния {response.status_code}")
 
 # Основные моменты:
 # - Убедитесь, что URL доступен и данные, которые вы ищете, находятся на сайте.
