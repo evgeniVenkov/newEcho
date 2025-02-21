@@ -1,14 +1,18 @@
-import pdfplumber
+import os
 
-# Открываем PDF-файл
-with pdfplumber.open("C:\\Users\\admin\\Pictures\\book.pdf") as pdf:
-    text = ""
+# Путь к папке с файлами
+folder_path = "C:/Users/admin/PycharmProjects/newEcho/data/"
 
-    # Чтение текста с каждой страницы
-    for page in pdf.pages:
-        text += page.extract_text()
+# Проходим по всем файлам в папке
+for file_name in os.listdir(folder_path):
+    file_path = os.path.join(folder_path, file_name)
 
-
-with open("./data/his_rus.txt", "w",encoding = "utf-8") as f:
-    f.write(text)
-print(text)
+    # Проверяем, является ли это текстовым файлом
+    if os.path.isfile(file_path) and file_name.endswith(".txt"):
+        try:
+            # Пытаемся открыть файл с кодировкой utf-8
+            with open(file_path, 'r', encoding='utf-8') as f:
+                f.read()  # Читаем файл, чтобы проверить его на наличие ошибок
+        except UnicodeDecodeError:
+            # Если возникла ошибка, файл не соответствует кодировке UTF-8
+            print(f"Файл {file_name} не соответствует UTF-8")

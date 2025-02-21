@@ -1,47 +1,81 @@
-from transformers import GPT2Tokenizer, GPT2LMHeadModel, Trainer, TrainingArguments
+from transformers import GPT2LMHeadModel, GPT2Tokenizer,AdamW
 from datasets import load_dataset
+from transformers import Trainer, TrainingArguments
+import os
+import torch
 
-# Указываем путь к уже скачанной модели
-model_dir = "../gpt2_medium"
 
-# 1. Загружаем токенизатор и модель
-tokenizer = GPT2Tokenizer.from_pretrained(model_dir)
-model = GPT2LMHeadModel.from_pretrained(model_dir)
+# Проверяем, доступен ли GPU
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# 2. Загружаем текстовый датасет
-dataset = load_dataset("wikitext", "wikitext-2-raw-v1")  # Можно заменить на свой датасет
+print("CUDA available:", torch.cuda.is_available())
+print("GPU name:", torch.cuda.get_device_name(0) if torch.cuda.is_available() else "None")
 
-# 3. Токенизация данных
+print(f"Training will be done on: {device}")
+
+# Загружаем модель и токенизатор
+model_path = "C:/Users/admin/PycharmProjects/newEcho/results"
+book_folder_path = "C:/Users/admin/PycharmProjects/newEcho/data"
+
+
+# Загружаем все книги из папки
+book_paths = [os.path.join(book_folder_path, book) for book in os.listdir(book_folder_path) if book.endswith(".txt")]
+
+# Загружаем несколько файлов в датасет
+dataset = load_dataset("text", data_files={"train": book_paths}, split="train")
+
+
+model = GPT2LMHeadModel.from_pretrained(model_path)
+tokenizer = GPT2Tokenizer.from_pretrained(model_path)
+
+# Устанавливаем eos_token как токен для паддинга
+tokenizer.pad_token = tokenizer.eos_token
+
+model = model.to(device)
+# Функция для токенизации
+
+# optimizer = torch.optim.AdamW(model.parameters(), lr=0.1)
 def tokenize_function(examples):
-    return tokenizer(examples["text"], truncation=True, padding="max_length", max_length=512)
+    return tokenizer(examples["text"], return_tensors="pt", padding=True, truncation=True)
 
-tokenized_datasets = dataset.map(tokenize_function, batched=True, remove_columns=["text"])
+tokenized_datasets = dataset.map(tokenize_function, batched=True)
 
-# 4. Настраиваем параметры обучения
+# Параметры для тренировки
 training_args = TrainingArguments(
-    output_dir="./gpt2_xl_finetuned",  # Папка для сохранения модели
-    evaluation_strategy="epoch",  # Оценка после каждой эпохи
-    learning_rate=5e-5,  # Начальная скорость обучения
-    num_train_epochs=3,  # Количество эпох
-    per_device_train_batch_size=2,  # Размер батча
-    save_steps=500,  # Сохранение каждые 500 шагов
-    save_total_limit=2,  # Хранить только 2 последних чекпоинта
-    logging_dir="./logs",  # Логи обучения
-    logging_steps=10,  # Логи каждые 10 шагов
-    fp16=True,  # Использование 16-битной точности
+    output_dir="./results",  # Директория для сохранения результатов тренировки
+    num_train_epochs=1,  # Количество эпох (проходов по данным)
+    per_device_train_batch_size=4,  # Размер батча (количество примеров на одном шаге)
+    save_steps=10_000,  # Частота сохранения модели (каждые 10,000 шагов)
+    save_total_limit=2,  # Максимальное количество сохраненных моделей
+
 )
 
-# 5. Настраиваем Trainer
-trainer = Trainer(
-    model=model,
-    args=training_args,
-    train_dataset=tokenized_datasets["train"],
-    eval_dataset=tokenized_datasets["validation"],
+# Переопределяем класс Trainer для добавления вычисления потерь
+class MyTrainer(Trainer):
+    def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=None):
+        """
+        Эта функция переопределяет стандартное вычисление потерь.
+        Она добавляет 'labels' в inputs и вычисляет потери на основе 'input_ids'.
+        """
+        inputs = {key: value.to(device) for key, value in inputs.items()}
+        inputs['labels'] = inputs['input_ids']  # Устанавливаем labels равными input_ids для вычисления потерь
+        outputs = model(**inputs)  # Прогоняем модель через входные данные
+        loss = outputs.loss  # Получаем значение потерь
+        # Если необходимо, возвращаем как потери, так и выходные данные модели, иначе только потери
+        return (loss, outputs) if return_outputs else loss
+
+# Создаем объект тренера с указанными параметрами
+trainer = MyTrainer(
+    model=model,  # Модель, которую будем обучать
+    args=training_args,  # Параметры тренировки
+    data_collator=None,  # Метод для группировки данных в батчи (по умолчанию None)
+    train_dataset=tokenized_datasets,  # Обучающий датасет с токенизированными данными
 )
 
-# 6. Запускаем обучение
+# Тренировка
 trainer.train()
 
-# 7. Сохраняем обученную модель
-model.save_pretrained("./gpt_medium_little_tuned")
-tokenizer.save_pretrained("./gpt_medium_little_tuned ")
+# Сохраняем модель один раз в конце тренировки
+model.save_pretrained(training_args.output_dir)
+tokenizer.save_pretrained(training_args.output_dir)
+print("Saved model checkpoint to {}".format(training_args.output_dir))
